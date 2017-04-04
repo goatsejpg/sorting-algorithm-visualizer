@@ -2,20 +2,25 @@
 #include <iostream>
 #include <random> // for rand() and srand()
 #include <time.h> // for time()
+#include <climits>
 
 #include "values.h"
 #include "visualize.h"
 #include "sort.h"
 
-const int ENTRIES = 512, MAX_VALUE = 400;
-const char BAR_WIDTH = 3, BAR_HEIGHT = 2;
-const int WIDTH = ENTRIES * BAR_WIDTH, HEIGHT = MAX_VALUE * BAR_HEIGHT;
-const int DELAY = 0;
+int ENTRIES, MAX_VALUE;
+int BAR_WIDTH, BAR_HEIGHT;
+int WIDTH, HEIGHT;
+int DELAY = 0;
 SDL_Window* window;
 SDL_Renderer* renderer;
 
 void error(const char* in) {
-	std::cerr << "SDL: " << in << std::endl;
+	std::cerr << "SDL: " << in << ": " << SDL_GetError() << std::endl;
+}
+
+constexpr unsigned int strtoint(const char* str, int h = 0) {
+	return !str[h] ? 5381 : (strtoint(str, h+1) * 33) ^ str[h];
 }
 
 int main(int argc, char** argv) {
@@ -24,16 +29,53 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
+	SDL_DisplayMode dsp_mode;
+
+	std::cout << "Enter ENTRIES, DELAY, MAX_VALUE, BAR_WIDTH, BAR_HEIGHT" << std::endl;
+	std::cin >> ENTRIES >> DELAY >> MAX_VALUE >> BAR_WIDTH >> BAR_HEIGHT;
+	WIDTH  = ENTRIES * BAR_WIDTH; 
+	HEIGHT = MAX_VALUE * BAR_HEIGHT;
+
+	for (int i = 0; i < SDL_GetNumVideoDisplays(); ++i) {
+		int check = SDL_GetCurrentDisplayMode(i, &dsp_mode);
+		if (check != 0)
+			std::cerr << "SDL: Display mode for display " << i <<
+				" couldn't be found: " << SDL_GetError() << std::endl;
+		else if (dsp_mode.w < WIDTH || dsp_mode.h < HEIGHT)
+			std::cerr << "WARNING: Window will be too large for display " << i << std::endl;
+	}
+
+	std::cout << "\nENTRIES:    " << ENTRIES
+	          << "\nDELAY:      " << DELAY
+	          << "\nMAX_VALUE:  " << MAX_VALUE
+	          << "\nBAR_WIDTH:  " << BAR_WIDTH
+	          << "\nBAR_HEIGHT: " << BAR_HEIGHT
+	          << "\nWIDTH:      " << WIDTH
+	          << "\nHEIGHT:     " << HEIGHT
+	          << "\n\nContinue?: ";
+	std::string temp;
+	while (true) {
+		std::cin >> temp;
+		if (temp[0] == 'y') {
+			std::cout << "\nStarting..." << std::endl;
+			break;
+		}
+		else if (temp[0] == 'n') {
+			std::cout << "\nAbort" << std::endl;
+			return 0;
+		}
+	}
+
 	window = SDL_CreateWindow("Sort Visualiser", SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+		SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_MINIMIZED);
 	if (window == NULL) {
 		error("Window error"); return -2;
-	}
+	} else error("Window created");
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL) {
 		error("Renderer error"); return -2;
-	}
+	} else error("Renderer created");
 
 	SDL_Event evt;
 
@@ -44,23 +86,43 @@ int main(int argc, char** argv) {
 		*i = (rand() % MAX_VALUE) + 1;
 	}
 
-	if (argc == 1) {
-		QUICK_SORT(ARRAY, 0, ENTRIES-1);
-	} else {
-		std::string i = std::string(argv[1]);
-		if (i == "bubble")
+	std::cout << "Enter sort to use from this selection\n"\
+	             "bubble quicksort" << std::endl;
+
+	unsigned int begin_time;
+
+	bool loop = true;
+	while (loop) {
+		std::cin >> temp;
+		switch (strtoint(temp.c_str())) {
+		case strtoint("bubble"):
+			loop = false;
+			std::cout << "Using bubble sort..." << std::endl;
+			SDL_RaiseWindow(window);
+			begin_time = SDL_GetTicks();
 			BUBBLE_SORT(ARRAY);
-		else if (i == "quicksort")
-			QUICK_SORT(ARRAY, 0, ENTRIES-1);
+			break;
+		case strtoint("quicksort"):
+			loop = false;
+			std::cout << "Using quick sort..." << std::endl;
+			SDL_RaiseWindow(window);
+			begin_time = SDL_GetTicks();
+			QUICK_SORT(ARRAY, 0, ENTRIES);
+			break;
+		}
 	}
 
+	std::cout << "Done!\n"\
+	             "Took " << SDL_GetTicks() - begin_time << " ms "\
+	             "on " << ENTRIES << " elements with " << DELAY << " ms delay\n"\
+	             "Do not take these results as a comprehensive benchmark!" << std::endl;
 	visual::end_sequence(ARRAY);
 
-	bool playing = true;
-	while (playing) {
+	loop = true;
+	while (loop) {
 		while (SDL_PollEvent(&evt)) {
 			if (evt.type == SDL_QUIT)
-				playing = false;
+				loop = false;
 				break;
 		}
 	}

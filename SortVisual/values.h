@@ -5,9 +5,9 @@
 
 #include <SDL2/SDL.h>
 
-extern const int ENTRIES, MAX_VALUE, WIDTH, HEIGHT;
-extern const char BAR_WIDTH, BAR_HEIGHT;
-extern const int DELAY;
+extern int ENTRIES, MAX_VALUE, WIDTH, HEIGHT;
+extern int BAR_WIDTH, BAR_HEIGHT;
+extern int DELAY;
 extern SDL_Color BLACK, WHITE, RED, GREEN, BLUE;
 
 extern SDL_Window* window;
