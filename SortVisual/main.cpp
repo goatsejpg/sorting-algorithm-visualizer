@@ -3,13 +3,14 @@
 #include <random> // for rand() and srand()
 #include <time.h> // for time()
 #include <climits>
+#include <cstdarg>
 
 #include "values.h"
 #include "visualize.h"
 #include "sort.h"
 
-int ENTRIES, MAX_VALUE;
-int BAR_WIDTH, BAR_HEIGHT;
+int ENTRIES = 0, MAX_VALUE = 0;
+int BAR_WIDTH = 0, BAR_HEIGHT = 0;
 int WIDTH, HEIGHT;
 int DELAY = 0;
 SDL_Window* window;
@@ -17,6 +18,24 @@ SDL_Renderer* renderer;
 
 void error(const char* in) {
 	std::cerr << "SDL: " << in << ": " << SDL_GetError() << std::endl;
+}
+
+bool is_num(const std::string& str) {
+	for (auto c : str)
+		if (c < 48 || c > 57) return false;
+	return true;
+}
+
+void set_value(int& dest) {
+	std::string temp;
+	while (true) {
+		std::cin >> temp;
+		if (is_num(temp)) {
+			dest = abs(std::stoi(temp));
+			return;
+		} else
+			std::cerr << temp << " is not a positive integer! Re-enter value." << std::endl;
+	}
 }
 
 constexpr unsigned int strtoint(const char* str, int h = 0) {
@@ -32,9 +51,20 @@ int main(int argc, char** argv) {
 	SDL_DisplayMode dsp_mode;
 
 	std::cout << "Enter ENTRIES, DELAY, MAX_VALUE, BAR_WIDTH, BAR_HEIGHT" << std::endl;
-	std::cin >> ENTRIES >> DELAY >> MAX_VALUE >> BAR_WIDTH >> BAR_HEIGHT;
+	//std::cin >> ENTRIES >> DELAY >> MAX_VALUE >> BAR_WIDTH >> BAR_HEIGHT;
+	set_value(ENTRIES); set_value(DELAY); set_value(MAX_VALUE); 
+		set_value(BAR_WIDTH); set_value(BAR_HEIGHT);
+
 	WIDTH  = ENTRIES * BAR_WIDTH; 
 	HEIGHT = MAX_VALUE * BAR_HEIGHT;
+
+	std::cout << "\nENTRIES:    " << ENTRIES
+	          << "\nDELAY:      " << DELAY
+	          << "\nMAX_VALUE:  " << MAX_VALUE
+	          << "\nBAR_WIDTH:  " << BAR_WIDTH
+	          << "\nBAR_HEIGHT: " << BAR_HEIGHT
+	          << "\nWIDTH:      " << WIDTH
+	          << "\nHEIGHT:     " << HEIGHT << '\n' << std::endl;
 
 	for (int i = 0; i < SDL_GetNumVideoDisplays(); ++i) {
 		int check = SDL_GetCurrentDisplayMode(i, &dsp_mode);
@@ -45,14 +75,7 @@ int main(int argc, char** argv) {
 			std::cerr << "WARNING: Window will be too large for display " << i << std::endl;
 	}
 
-	std::cout << "\nENTRIES:    " << ENTRIES
-	          << "\nDELAY:      " << DELAY
-	          << "\nMAX_VALUE:  " << MAX_VALUE
-	          << "\nBAR_WIDTH:  " << BAR_WIDTH
-	          << "\nBAR_HEIGHT: " << BAR_HEIGHT
-	          << "\nWIDTH:      " << WIDTH
-	          << "\nHEIGHT:     " << HEIGHT
-	          << "\n\nContinue?: ";
+	std::cout << "Continue? : ";
 	std::string temp;
 	while (true) {
 		std::cin >> temp;
